@@ -50,7 +50,7 @@ export default {
         }
       })
     },
-    getLimitAndOffset(array, is_top) {
+    getLimitAndOffset( is_top) {
       this.page += is_top ? -1 : 1;
       this.page = this.page < 1 ? 1 : this.page;
       if (this.page < 1 || this.page > this.pageLimit) return;
@@ -65,31 +65,37 @@ export default {
       this.json_type == 'array' ? this.loadMoreArray(top) : this.loadMoreObject(top);
     },
     loadMoreObject(is_top) {
+      if (this.loading) return;
       if (!this.object_array_key) this.showing_json = this.json;
+      if (!this.json[this.object_array_key]) return;
 
-      const [start, end] = this.getLimitAndOffset(this.json[this.object_array_key], is_top);
-      console.log(start, end);
-      const new_json = { ...this.json, [this.object_array_key]: this.json[this.object_array_key].slice(start, end) }
+      const [start, end] = this.getLimitAndOffset(is_top);
+      const new_json = { ...this.json, [this.object_array_key]: [...this.json[this.object_array_key].slice(start, end)] }
       this.showing_json = new_json;
+      
+      this.loading = true;
+      setTimeout(() => this.loading = false, 500);
     },
     loadMoreArray(is_top) {
       if (this.loading) return;
-
-      const [start, end] = this.getLimitAndOffset(this.json, is_top);
+  
+      const [start, end] = this.getLimitAndOffset(is_top);
       this.showing_json = [...this.json.slice(start, end)];
-      this.loading = true;
 
+      this.loading = true;
       setTimeout(() => this.loading = false, 500);
     },
     checkScroll({ target }) {
       if (target.scrollTop === 0) {
-        if (this.page == 1) return;
+        if (this.page <= 1) return;
 
         this.loadMore(true);
         target.scrollTop = target.scrollHeight - 10; 
       }
 
       if (target.scrollHeight - target.scrollTop === target.clientHeight) {
+        if (this.page >= this.pageLimit) return;
+
         this.loadMore();
       }
     },
@@ -123,7 +129,7 @@ export default {
           :expand-depth="4"
         />
       </div>
-      <p>Current page: {{ page }} Total pages: {{ pageLimit }}</p>
+      <p v-if="pageLimit">Current page: {{ page }} Total pages: {{ pageLimit }}</p>
     </div>
   </div>
 </template>
