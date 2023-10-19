@@ -50,40 +50,35 @@ export default {
         }
       })
     },
-    getLimitAndOffset( is_top) {
-      this.page += is_top ? -1 : 1;
-      this.page = this.page < 1 ? 1 : this.page;
-      if (this.page < 1 || this.page > this.pageLimit) return;
-
+    getStartAndEnd() {
       let start = (this.page - 1) * this.per;
       let end = this.page * this.per;
 
       start = start < 0 ? 0 : start;
       return [start, end];
     },
-    loadMore(top = false) {
-      this.json_type == 'array' ? this.loadMoreArray(top) : this.loadMoreObject(top);
-    },
-    loadMoreObject(is_top) {
+    loadMore(is_top = false) {
       if (this.loading) return;
+
+      this.page += is_top ? -1 : 1;
+      this.page = this.page < 1 ? 1 : this.page;
+
+      this.json_type == 'array' ? this.loadMoreArray(top) : this.loadMoreObject(top);
+
+      this.loading = true;
+      setTimeout(() => this.loading = false, 500);
+    },
+    loadMoreObject() {
       if (!this.object_array_key) this.showing_json = this.json;
       if (!this.json[this.object_array_key]) return;
 
-      const [start, end] = this.getLimitAndOffset(is_top);
+      const [start, end] = this.getStartAndEnd();
       const new_json = { ...this.json, [this.object_array_key]: [...this.json[this.object_array_key].slice(start, end)] }
       this.showing_json = new_json;
-      
-      this.loading = true;
-      setTimeout(() => this.loading = false, 500);
     },
-    loadMoreArray(is_top) {
-      if (this.loading) return;
-  
-      const [start, end] = this.getLimitAndOffset(is_top);
+    loadMoreArray() {
+      const [start, end] = this.getStartAndEnd();
       this.showing_json = [...this.json.slice(start, end)];
-
-      this.loading = true;
-      setTimeout(() => this.loading = false, 500);
     },
     checkScroll({ target }) {
       if (target.scrollTop === 0) {
@@ -94,7 +89,7 @@ export default {
       }
 
       if (target.scrollHeight - target.scrollTop === target.clientHeight) {
-        if (this.page >= this.pageLimit) return;
+        if (!this.pageLimit || this.page >= this.pageLimit) return;
 
         this.loadMore();
       }
@@ -116,7 +111,7 @@ export default {
       </div>
 
       <div v-if="error">
-        <p>Invalid JSON</p>
+        <p style="text-align: center; color: red;">Invalid JSON</p>
       </div>
     </div>
 
